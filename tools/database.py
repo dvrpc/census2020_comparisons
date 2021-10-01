@@ -1,5 +1,4 @@
 from __future__ import annotations
-import os
 import pandas as pd
 import geopandas as gpd
 import sqlalchemy
@@ -7,6 +6,7 @@ import psycopg2
 from geoalchemy2 import Geometry, WKTElement
 
 from .env_vars import DATABASE_URL
+
 
 class Database:
     """
@@ -91,7 +91,7 @@ class Database:
         return df
 
     def import_dataframe(
-        self, df:pd.DataFrame, tablename:str, df_import_kwargs: dict = {}
+        self, df: pd.DataFrame, tablename: str, df_import_kwargs: dict = {}
     ) -> None:
         """
         - Import an in-memory dataframe to postgres
