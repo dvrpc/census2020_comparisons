@@ -85,7 +85,7 @@ class Database:
 
         # Remove '.' and '-' from column names.
         # i.e. 'geo.display-label' becomes 'geodisplaylabel'
-        for s in [".", "-", "(", ")", "+"]:
+        for s in [".", "-", "(", ")", "+", ":"]:
             df.columns = df.columns.str.replace(s, "", regex=False)
 
         return df
@@ -105,10 +105,11 @@ class Database:
         # Make sure the schema exists
         if "." in tablename:
             schema, tbl = tablename.split(".")
-            self.execute(f"CREATE SCHEMA IF NOT EXISTS {schema};")
         else:
             schema = "raw"
             tbl = tablename
+
+        self.execute(f"CREATE SCHEMA IF NOT EXISTS {schema};")
 
         # Write to database
         engine = sqlalchemy.create_engine(self.uri)
@@ -211,3 +212,34 @@ class Database:
 
         for query in queries:
             self.execute(query)
+
+    def tables(self, spatial_only: bool = False, schema: str | None = None) -> list:
+        """
+        - Return a list of tables in the database
+        - Set `spatial_only=True` if you only want a list of geotables
+        Arguments:
+            spatial_only (bool): flag that will filter to spatial tables only if `True`
+            schema (str | None): optional name of schema to filter results to
+        Returns:
+            list: with all tablenames, with each entry formatted as `schema.tablename`
+        """
+        if spatial_only:
+            query = """
+                SELECT concat(f_table_schema, '.', f_table_name )
+                FROM geometry_columns
+            """
+
+            if schema:
+                query += f" WHERE f_table_schema = '{schema}'"
+
+        else:
+            query = """
+                SELECT concat(table_schema, '.', table_name )
+                FROM information_schema.tables
+                WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+            """
+
+            if schema:
+                query += f" AND table_schema = '{schema}'"
+
+        return self.query(query)
